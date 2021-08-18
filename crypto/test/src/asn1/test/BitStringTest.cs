@@ -79,6 +79,36 @@ namespace Org.BouncyCastle.Asn1.Tests
             EncodingCheck(test, test4);
         }
 
+        private void DoTestRandomPadArraySegmentBits()
+        {
+            byte[] test = Hex.Decode("030206c0");
+
+            byte[] test1 = Hex.Decode("030206f0");
+            byte[] test2 = Hex.Decode("030206c1");
+            byte[] test3 = Hex.Decode("030206c7");
+            byte[] test4 = Hex.Decode("030206d1");
+
+            EncodingCheck(MakeRandomArraySegment(test), MakeRandomArraySegment(test1));
+            EncodingCheck(MakeRandomArraySegment(test), MakeRandomArraySegment(test2));
+            EncodingCheck(MakeRandomArraySegment(test), MakeRandomArraySegment(test3));
+            EncodingCheck(MakeRandomArraySegment(test), MakeRandomArraySegment(test4));
+        }
+
+        private static ArraySegment<byte> MakeRandomArraySegment(byte[] buffer)
+        {
+            var random = new Random();
+
+            var array = new byte[buffer.Length + random.Next(100)];
+
+            var offset = random.Next(array.Length - buffer.Length);
+
+            random.NextBytes(array);
+
+            buffer.CopyTo(array, offset);
+
+            return new ArraySegment<byte>(array, offset, buffer.Length);
+        }
+
         private void EncodingCheck(byte[] derData, byte[] dlData)
         {
             if (Arrays.AreEqual(derData, Asn1Object.FromByteArray(dlData).GetEncoded()))
@@ -91,6 +121,39 @@ namespace Org.BouncyCastle.Asn1.Tests
             //IsTrue("DL test failed", dl is DLBitString);
             IsTrue("BER test failed", dl is BerBitString);
             if (!Arrays.AreEqual(derData, Asn1Object.FromByteArray(dlData).GetDerEncoded()))
+            {
+                Fail("failed DER check");
+            }
+            // TODO This test isn't applicable until we get the DL variants
+            //try
+            //{
+            //    DerBitString.GetInstance(dlData);
+            //    Fail("no exception");
+            //}
+            //catch (ArgumentException e)
+            //{
+            //    // ignore
+            //}
+            IAsn1String der = DerBitString.GetInstance(derData);
+            IsTrue("DER test failed", der is DerBitString);
+        }
+
+        private void EncodingCheck(ArraySegment<byte> derData, ArraySegment<byte> dlData)
+        {
+            var encodeed = Asn1Object.FromByteArraySegment(dlData).GetEncoded();
+
+            if (Arrays.AreEqual(derData.Array, derData.Offset, derData.Offset + derData.Count, encodeed, 0, encodeed.Length))
+            {
+                //Fail("failed DL check");
+                Fail("failed BER check");
+            }
+            IAsn1String dl = BerBitString.GetInstance(dlData);
+
+            //IsTrue("DL test failed", dl is DLBitString);
+            IsTrue("BER test failed", dl is BerBitString);
+
+            encodeed = Asn1Object.FromByteArraySegment(dlData).GetDerEncoded();
+            if (!Arrays.AreEqual(derData.Array, derData.Offset, derData.Offset + derData.Count, encodeed, 0, encodeed.Length))
             {
                 Fail("failed DER check");
             }
@@ -129,34 +192,35 @@ namespace Org.BouncyCastle.Asn1.Tests
             }
 
             k = new KeyUsage(KeyUsage.CrlSign);
-            if ((k.GetBytes()[0] != (byte)KeyUsage.CrlSign)  || (k.PadBits != 1))
+            if ((k.GetBytes()[0] != (byte)KeyUsage.CrlSign) || (k.PadBits != 1))
             {
                 Fail("failed cRLSign");
             }
 
             k = new KeyUsage(KeyUsage.DecipherOnly);
-            if ((k.GetBytes()[1] != (byte)(KeyUsage.DecipherOnly >> 8))  || (k.PadBits != 7))
+            if ((k.GetBytes()[1] != (byte)(KeyUsage.DecipherOnly >> 8)) || (k.PadBits != 7))
             {
                 Fail("failed decipherOnly");
             }
 
-			// test for zero length bit string
-			try
-			{
-				Asn1Object.FromByteArray(new DerBitString(new byte[0], 0).GetEncoded());
-			}
-			catch (IOException e)
-			{
-				Fail(e.ToString());
-			}
+            // test for zero length bit string
+            try
+            {
+                Asn1Object.FromByteArray(new DerBitString(new byte[0], 0).GetEncoded());
+            }
+            catch (IOException e)
+            {
+                Fail(e.ToString());
+            }
 
             DoTestRandomPadBits();
+            DoTestRandomPadArraySegmentBits();
             DoTestZeroLengthStrings();
         }
 
         public override string Name
         {
-			get { return "BitString"; }
+            get { return "BitString"; }
         }
 
         public static void Main(

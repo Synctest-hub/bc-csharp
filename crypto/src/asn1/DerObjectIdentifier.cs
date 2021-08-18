@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Math.Raw;
 using Org.BouncyCastle.Utilities;
 
 namespace Org.BouncyCastle.Asn1
@@ -23,7 +24,7 @@ namespace Org.BouncyCastle.Asn1
         public static DerObjectIdentifier GetInstance(object obj)
         {
             if (obj == null || obj is DerObjectIdentifier)
-                return (DerObjectIdentifier) obj;
+                return (DerObjectIdentifier)obj;
 
             if (obj is Asn1Encodable)
             {
@@ -35,6 +36,9 @@ namespace Org.BouncyCastle.Asn1
 
             if (obj is byte[])
                 return FromOctetString((byte[])obj);
+
+            if (obj is ArraySegment<byte>)
+                return FromOctetString((ArraySegment<byte>)obj);
 
             throw new ArgumentException("illegal object in GetInstance: " + Platform.GetTypeName(obj), "obj");
         }
@@ -49,8 +53,8 @@ namespace Org.BouncyCastle.Asn1
          *               be converted.
          */
         public static DerObjectIdentifier GetInstance(
-            Asn1TaggedObject	obj,
-            bool				explicitly)
+            Asn1TaggedObject obj,
+            bool explicitly)
         {
             Asn1Object o = obj.GetObject();
 
@@ -110,8 +114,8 @@ namespace Org.BouncyCastle.Asn1
         }
 
         private void WriteField(
-            Stream	outputStream,
-            long	fieldValue)
+            Stream outputStream,
+            long fieldValue)
         {
             byte[] result = new byte[9];
             int pos = 8;
@@ -125,8 +129,8 @@ namespace Org.BouncyCastle.Asn1
         }
 
         private void WriteField(
-            Stream		outputStream,
-            BigInteger	fieldValue)
+            Stream outputStream,
+            BigInteger fieldValue)
         {
             int byteCount = (fieldValue.BitLength + 6) / 7;
             if (byteCount == 0)
@@ -137,12 +141,12 @@ namespace Org.BouncyCastle.Asn1
             {
                 BigInteger tmpValue = fieldValue;
                 byte[] tmp = new byte[byteCount];
-                for (int i = byteCount-1; i >= 0; i--)
+                for (int i = byteCount - 1; i >= 0; i--)
                 {
-                    tmp[i] = (byte) ((tmpValue.IntValue & 0x7f) | 0x80);
+                    tmp[i] = (byte)((tmpValue.IntValue & 0x7f) | 0x80);
                     tmpValue = tmpValue.ShiftRight(7);
                 }
-                tmp[byteCount-1] &= 0x7f;
+                tmp[byteCount - 1] &= 0x7f;
                 outputStream.Write(tmp, 0, tmp.Length);
             }
         }
@@ -269,10 +273,10 @@ namespace Org.BouncyCastle.Asn1
         private static string MakeOidStringFromBytes(
             byte[] bytes)
         {
-            StringBuilder	objId = new StringBuilder();
-            long			value = 0;
-            BigInteger		bigValue = null;
-            bool			first = true;
+            StringBuilder objId = new StringBuilder();
+            long value = 0;
+            BigInteger bigValue = null;
+            bool first = true;
 
             for (int i = 0; i != bytes.Length; i++)
             {
@@ -358,6 +362,26 @@ namespace Org.BouncyCastle.Asn1
                 }
 
                 return cache[first] = new DerObjectIdentifier(enc);
+            }
+        }
+
+        internal static DerObjectIdentifier FromOctetString(ArraySegment<byte> enc)
+        {
+            int hashCode = Arrays.GetHashCode(enc.Array, enc.Offset, enc.Count);
+            int first = hashCode & 1023;
+
+            lock (cache)
+            {
+                var bytes = new byte[enc.Count];
+                Array.Copy(enc.Array ?? new byte[0], enc.Offset, bytes, 0, bytes.Length);
+
+                DerObjectIdentifier entry = cache[first];
+                if (entry != null && Arrays.AreEqual(bytes, entry.GetBody()))
+                {
+                    return entry;
+                }
+
+                return cache[first] = new DerObjectIdentifier(bytes);
             }
         }
     }

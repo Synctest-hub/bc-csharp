@@ -35,6 +35,18 @@ namespace Org.BouncyCastle.Asn1
                 }
             }
 
+            if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return (DerGraphicString)FromByteArraySegment((ArraySegment<byte>)obj);
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException("encoding error in GetInstance: " + e.ToString(), "obj");
+                }
+            }
+
             throw new ArgumentException("illegal object in GetInstance: " + Platform.GetTypeName(obj), "obj");
         }
 

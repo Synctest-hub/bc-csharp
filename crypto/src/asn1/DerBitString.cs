@@ -28,11 +28,24 @@ namespace Org.BouncyCastle.Asn1
 			{
 				return (DerBitString) obj;
 			}
+
             if (obj is byte[])
             {
                 try
                 {
                     return (DerBitString)FromByteArray((byte[])obj);
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException("encoding error in GetInstance: " + e.ToString());
+                }
+            }
+
+            if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return (DerBitString)FromByteArraySegment((ArraySegment<byte>)obj);
                 }
                 catch (Exception e)
                 {

@@ -41,10 +41,21 @@ namespace Org.BouncyCastle.Asn1
                     throw new ArgumentException("failed to construct sequence from byte[]: " + e.Message);
                 }
             }
+            else if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return GetInstance(FromByteArraySegment((ArraySegment<byte>)obj));
+                }
+                catch (IOException e)
+                {
+                    throw new ArgumentException("failed to construct sequence from ArraySegment<byte>: " + e.Message);
+                }
+            }
             else if (obj is Asn1Encodable)
             {
                 Asn1Object primitive = ((Asn1Encodable)obj).ToAsn1Object();
-                
+
                 if (primitive is Asn1Sequence)
                 {
                     return (Asn1Sequence)primitive;
