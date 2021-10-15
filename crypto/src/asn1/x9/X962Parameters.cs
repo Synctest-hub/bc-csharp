@@ -12,12 +12,12 @@ namespace Org.BouncyCastle.Asn1.X9
 		public static X962Parameters GetInstance(
 			object obj)
 		{
-			if (obj == null || obj is X962Parameters) 
+			if (obj == null || obj is X962Parameters)
 			{
 				return (X962Parameters)obj;
 			}
 
-			if (obj is Asn1Object) 
+			if (obj is Asn1Object)
 			{
 				return new X962Parameters((Asn1Object)obj);
 			}
@@ -33,6 +33,18 @@ namespace Org.BouncyCastle.Asn1.X9
 					throw new ArgumentException("unable to parse encoded data: " + e.Message, e);
 				}
 			}
+
+            if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return new X962Parameters(Asn1Object.FromByteArraySegment((ArraySegment<byte>)obj));
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException("unable to parse encoded data: " + e.Message, e);
+                }
+            }
 
 			throw new ArgumentException("unknown object in getInstance()");
 		}

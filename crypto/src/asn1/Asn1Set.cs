@@ -47,6 +47,17 @@ namespace Org.BouncyCastle.Asn1
                     throw new ArgumentException("failed to construct set from byte[]: " + e.Message);
                 }
             }
+            else if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return Asn1Set.GetInstance(FromByteArraySegment((ArraySegment<byte>)obj));
+                }
+                catch (IOException e)
+                {
+                    throw new ArgumentException("failed to construct set from ArraySegment<byte>: " + e.Message);
+                }
+            }
             else if (obj is Asn1Encodable)
             {
                 Asn1Object primitive = ((Asn1Encodable)obj).ToAsn1Object();

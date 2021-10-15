@@ -60,6 +60,17 @@ namespace Org.BouncyCastle.Asn1
                     throw new ArgumentException("failed to construct OCTET STRING from byte[]: " + e.Message);
                 }
             }
+            else if (obj is ArraySegment<byte>)
+            {
+                try
+                {
+                    return GetInstance(FromByteArraySegment((ArraySegment<byte>)obj));
+                }
+                catch (IOException e)
+                {
+                    throw new ArgumentException("failed to construct OCTET STRING from ArraySegment<byte>: " + e.Message);
+                }
+            }
             // TODO: this needs to be deleted in V2
             else if (obj is Asn1TaggedObject)
             {
